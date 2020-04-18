@@ -1,0 +1,56 @@
+{
+  "$schema": "https://raw.githubusercontent.com/sourcegraph/sourcegraph/master/shared/src/schema/extension.schema.json",
+  "name": "custom-views",
+  "description": "Displays custom views",
+  "publisher": "sourcegraph",
+  "activationEvents": [
+    "*"
+  ],
+  "wip": true,
+  "categories": [],
+  "tags": [],
+  "contributes": {
+    "views": [
+      {
+        "id": "org",
+        "where": "global"
+      }
+    ]
+  },
+  "version": "0.0.0-DEVELOPMENT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph-custom-views"
+  },
+  "license": "Apache-2.0",
+  "main": "dist/custom-views.js",
+  "scripts": {
+    "eslint": "eslint 'src/**/*.ts'",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "parcel build --out-file dist/custom-views.js src/custom-views.ts",
+    "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json",
+    "serve": "yarn run symlink-package && parcel serve --no-hmr --out-file dist/custom-views.js src/custom-views.ts",
+    "watch:typecheck": "tsc -p tsconfig.json -w",
+    "watch:build": "tsc -p tsconfig.dist.json -w",
+    "sourcegraph:prepublish": "yarn run typecheck && yarn run build"
+  },
+  "browserslist": [
+    "last 1 Chrome versions",
+    "last 1 Firefox versions",
+    "last 1 Edge versions",
+    "last 1 Safari versions"
+  ],
+  "devDependencies": {
+    "@sourcegraph/eslint-config": "^0.16.0",
+    "@sourcegraph/tsconfig": "^4.0.1",
+    "lnfs-cli": "^2.1.0",
+    "mkdirp": "^1.0.4",
+    "parcel-bundler": "^1.12.4",
+    "sourcegraph": "^24.0.0",
+    "tslint": "^6.1.1",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "rxjs": "^6.5.5"
+  }
+}
