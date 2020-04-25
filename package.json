@@ -10,10 +10,27 @@
   "categories": [],
   "tags": [],
   "contributes": {
+    "actions": [
+      {
+        "id": "customViews.createPatchSet",
+        "title": "DEV: Create patch set for campaign",
+        "command": "customViews.createPatchSet",
+        "actionItem": {
+          "label": "Find-replace"
+        }
+      }
+    ],
+    "menus": {
+      "global/nav": [
+        {
+          "action": "customViews.createPatchSet"
+        }
+      ]
+    },
     "views": [
       {
         "id": "org",
-        "where": "global"
+        "where": "global/page"
       }
     ]
   },
@@ -51,6 +68,7 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
+    "@sourcegraph/campaigns-client": "link:../campaigns-client",
     "rxjs": "^6.5.5"
   }
 }
