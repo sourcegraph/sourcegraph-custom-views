@@ -9,7 +9,7 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
     if (sourcegraph.app.registerViewProvider) {
         ctx.subscriptions.add(
             sourcegraph.app.registerViewProvider(VIEW_ID, {
-                provideView: params => {
+                provideView: (params: any) => {
                     const org = params['extraPath'] ? params.extraPath.replace(/^\//, '') : null
                     if (org === null) {
                         throw new Error('no view specified')
@@ -40,7 +40,7 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                         })
                     )
                 },
-            })
+            } as any)
         )
     }
     ctx.subscriptions.add(registerCampaigns())

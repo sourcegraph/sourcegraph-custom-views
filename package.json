@@ -12,9 +12,9 @@
   "contributes": {
     "actions": [
       {
-        "id": "customViews.createPatchSet",
-        "title": "DEV: Create patch set for campaign",
-        "command": "customViews.createPatchSet",
+        "id": "customViews.previewCampaign",
+        "title": "New find-replace campaign...",
+        "command": "customViews.previewCampaign",
         "actionItem": {
           "label": "Find-replace"
         }
@@ -23,7 +23,12 @@
     "menus": {
       "global/nav": [
         {
-          "action": "customViews.createPatchSet"
+          "action": "customViews.previewCampaign"
+        }
+      ],
+      "commandPalette": [
+        {
+          "action": "customViews.previewCampaign"
         }
       ]
     },
