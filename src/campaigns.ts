@@ -1,6 +1,10 @@
 import { Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { evaluateCampaignSpec } from '@sourcegraph/campaigns-client'
+import { evaluateAndCreateCampaignSpec } from '@sourcegraph/campaigns-client'
+import slugify from 'slugify'
+
+// TODO(sqs) SECURITY(sqs): sanitize for real
+const escapedMarkdownCode = (text: string): string => '`' + text.replace(/`/g, '\\`') + '`'
 
 export const register = (): Subscription => {
     const subscription = new Subscription()
@@ -8,53 +12,68 @@ export const register = (): Subscription => {
         sourcegraph.commands.registerCommand('customViews.previewCampaign', async () => {
             const match = await sourcegraph.app.activeWindow!.showInputBox({
                 prompt: 'Find all matches of:',
-                value: '100Mi',
             })
             if (!match) {
                 return
             }
             const replacement = await sourcegraph.app.activeWindow!.showInputBox({
                 prompt: 'Replace with:',
-                value: '77Mi',
             })
             if (replacement === undefined) {
                 return
             }
 
-            const applyURL = await sourcegraph.app.activeWindow!.withProgress(
+            const name = `replace-${slugify(match)}-with-${slugify(replacement)}`
+            const description = `Replace ${escapedMarkdownCode(match)} with ${escapedMarkdownCode(replacement)}`
+            const namespaceName = 'sqs' // TODO(sqs)
+            let percentage = 0
+            const { applyURL, diffStat } = await sourcegraph.app.activeWindow!.withProgress(
                 { title: '**Find-replace**' },
-                async reporter => {
-                    reporter.next({ message: 'Searching for matching repositories...', percentage: 25 })
-                    await new Promise(resolve => setTimeout(resolve, 500))
-                    const repos = await getReposMatching(match)
-                    reporter.next({ message: 'Computing changes in files...', percentage: 50 })
+                async reporter =>
+                    evaluateAndCreateCampaignSpec(namespaceName, {
+                        name,
+                        on: [
+                            {
+                                repositoriesMatchingQuery: match,
+                            },
+                        ],
+                        description,
+                        steps: [
+                            {
+                                fileFilter: path =>
+                                    path.endsWith('.yaml') || path.endsWith('.yml') || path.endsWith('.md'), // TODO(sqs)
+                                editFile: (path, text) => {
+                                    if (!text.includes(match)) {
+                                        return null
+                                    }
 
-                    let percentage = 50
-                    const step = 1
-                    return evaluateCampaignSpec(
-                        repos,
-                        path => path.endsWith('.yaml') || path.endsWith('.yml'), // TODO(sqs)
-                        (path, text) => {
-                            if (!text.includes(match)) {
-                                return null
-                            }
-
-                            percentage += step
-                            reporter.next({ message: `Computing changes in ${path}`, percentage })
-                            return text.split(match).join(replacement)
-                        }
-                    )
-                }
+                                    percentage += (100 - percentage) / 100
+                                    reporter.next({ message: `Computing changes in ${path}`, percentage })
+                                    return text.split(match).join(replacement)
+                                },
+                            },
+                        ],
+                        changesetTemplate: {
+                            title: description,
+                            branch: `campaign/${name}`,
+                            commit: {
+                                message: description,
+                                author: {
+                                    name: 'Quinn Slack',
+                                    email: 'sqs@sourcegraph.com',
+                                },
+                            },
+                            published: false,
+                        },
+                    })
             )
-            await new Promise(resolve => setTimeout(resolve, 500))
             await sourcegraph.app.activeWindow!.showNotification(
-                `[**Find-replace changes**](${applyURL}) are ready to preview and apply.`,
+                `[**Find-replace changes**](${applyURL}) are ready to preview and apply.<br/><br/><small>${diffStat.added} additions, ${diffStat.changed} changes, ${diffStat.deleted} deletions</small>`,
                 sourcegraph.NotificationType.Success
             )
-            console.log(applyURL)
 
-            const relativeURL = new URL(applyURL)
-            await sourcegraph.commands.executeCommand('open', `${relativeURL.pathname}${relativeURL.search}`)
+            // const relativeURL = new URL(applyURL)
+            // await sourcegraph.commands.executeCommand('open', `${relativeURL.pathname}${relativeURL.search}`)
         })
     )
     return subscription
