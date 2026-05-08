@@ -1,5 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
-import { map } from 'rxjs/operators'
+import { map } from 'rxjs'
 import { getData } from './data'
 
 const VIEW_ID = 'org'
